@@ -369,6 +369,17 @@ class WrappedCythonOp:
         dtype = values.dtype
         is_numeric = dtype.kind in "iufcb"
 
+        if self.how in ["any", "all"]:
+            if mask is None:
+                mask = isna(values)
+            if dtype == object:
+                if kwargs["skipna"]:
+                    # GH#37501: don't raise on pd.NA when skipna=True
+                    if mask.any():
+                        # mask on original values computed separately
+                        values = values.copy()
+                        values[mask] = True
+
         is_datetimelike = dtype.kind in "mM"
 
         if is_datetimelike:
@@ -380,15 +391,6 @@ class WrappedCythonOp:
             values = values.astype(np.float32)
 
         if self.how in ["any", "all"]:
-            if mask is None:
-                mask = isna(values)
-            if dtype == object:
-                if kwargs["skipna"]:
-                    # GH#37501: don't raise on pd.NA when skipna=True
-                    if mask.any():
-                        # mask on original values computed separately
-                        values = values.copy()
-                        values[mask] = True
             values = values.astype(bool, copy=False).view(np.int8)
             is_numeric = True
 

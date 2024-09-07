@@ -3014,3 +3014,11 @@ def test_groupby_multi_index_codes():
 
     index = df_grouped.index
     tm.assert_index_equal(index, MultiIndex.from_frame(index.to_frame()))
+
+
+def test_goupby_timedelta_all_null():
+    # GH#59712
+    result = DataFrame([Timedelta(1), pd.NaT]).groupby([0, 1]).any()
+    expected = DataFrame([True, False])
+
+    tm.assert_frame_equal(result, expected)
